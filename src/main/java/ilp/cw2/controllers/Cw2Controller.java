@@ -147,7 +147,6 @@ public class Cw2Controller {
                         switch(query.getOperator()){
                             case "=":
                                 matchesCurrent = d.getCapability().getMaxMoves() == Integer.parseInt(query.getValue());
-
                                 break;
                             case  "!=":
                                 matchesCurrent = d.getCapability().getMaxMoves() != Integer.parseInt(query.getValue());
