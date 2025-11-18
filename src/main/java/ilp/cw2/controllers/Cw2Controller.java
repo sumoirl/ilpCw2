@@ -3,6 +3,7 @@ package ilp.cw2.controllers;
 
 import ilp.cw2.dtos.Capabilities;
 import ilp.cw2.dtos.Drone;
+import ilp.cw2.dtos.MedDispatchRec;
 import ilp.cw2.dtos.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -221,6 +222,12 @@ public class Cw2Controller {
         }
         return ResponseEntity.ok(droneIds);
     }
+
+    @PostMapping(startPoint + "/queryAvailableDrones")
+    public ResponseEntity<ArrayList<String>> queryAvailableDrones(@RequestBody List<MedDispatchRec> req){
+
+    }
+
 
 
 }
