@@ -19,7 +19,7 @@ public class MedDispatchRec {
     private LocalTime time;
 
     @JsonProperty("requirements")
-    private Capabilities requirements;
+    private Requirements requirements;
 
     @JsonProperty("delivery")
     private Point delivery;

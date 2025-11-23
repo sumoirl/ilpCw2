@@ -1,10 +1,8 @@
 package ilp.cw2.controllers;
 
-
-import ilp.cw2.dtos.Capabilities;
-import ilp.cw2.dtos.Drone;
-import ilp.cw2.dtos.MedDispatchRec;
-import ilp.cw2.dtos.Query;
+import ilp.cw2.dtos.*;
+import ilp.cw2.utils.Pair;
+import lombok.extern.apachecommons.CommonsLog;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +14,7 @@ import java.util.Objects;
 
 import static java.lang.Boolean.valueOf;
 
+@CommonsLog
 @RestController
 public class Cw2Controller {
 
@@ -224,10 +223,98 @@ public class Cw2Controller {
     }
 
     @PostMapping(startPoint + "/queryAvailableDrones")
-    public ResponseEntity<ArrayList<String>> queryAvailableDrones(@RequestBody List<MedDispatchRec> req){
+    public ResponseEntity<ArrayList<String>> queryAvailableDrones(@RequestBody List<MedDispatchRec> reqlist) {
+        Drone[] drones = restTemplate.getForObject((ilpEndpoint + "/drones"), Drone[].class);
+        DroneForServicePoint[] dronesForServicePoints = restTemplate.getForObject((ilpEndpoint + "/drones-for-service-points"), DroneForServicePoint[].class);
+        DroneForServicePoint[] dronesForServicePoints = restTemplate.getForObject((ilpEndpoint + "/drones-for-service-points"), DroneForServicePoint[].class);
+
+        ArrayList<Drone> requirementDrones = new ArrayList<>();
+        ArrayList<Pair<String, Integer>> timeDrones = new ArrayList<>();
+
+        for (Drone drone : drones) {
+            Boolean matchesAll = true;
+            for (MedDispatchRec req : reqlist) {
+                Boolean matches = true;
+                while (matches) {
+                    matches = (req.getRequirements().getCooling() == null || req.getRequirements().getCooling() == drone.getCapability().isCooling());
+                    if (!matches) {
+                        break;
+                    }
+                    matches = (req.getRequirements().getHeating() == null || req.getRequirements().getHeating() == drone.getCapability().isHeating());
+                    break;
+                }
+                if (matches == false) {
+                    matchesAll = false;
+                    break;
+                }
+            }
+            if (matchesAll) {
+                requirementDrones.add(drone);
+            }
+        }
+
+        ArrayList<Pair<DronesAvailibility, Integer>> DroneAvail = new ArrayList();
+
+        for (DroneForServicePoint d : dronesForServicePoints) {
+            for (DronesAvailibility drone : d.getDrones()) {
+                DroneAvail.add(new Pair<>(drone, d.getServicePointId()));
+            }
+        }
+
+         for (Pair<DronesAvailibility,Integer> drone : DroneAvail) {
+
+            boolean coversAll = true;
+
+            for (MedDispatchRec req : reqlist) {
+                boolean covered = false;
+
+                for (Availibility a : drone.first.getAvailability()) {
+                    if (a.getDayOfWeek().equals(req.getDate().getDayOfWeek())
+                            && !req.getTime().isBefore(a.getFrom())
+                            && !req.getTime().isAfter(a.getUntil())) {
+                        covered = true;
+                        break;
+                    }
+                }
+                if (!covered) {
+                    coversAll = false;
+                    break;
+                }
+            }
+            if (coversAll) {
+                timeDrones.add(new Pair<>(drone.first.getId(), drone.second));
+            }
+        }
+         ArrayList<Pair<Drone, Integer>> availableDrones = new ArrayList<>();
+
+        for (Drone d : requirementDrones) {
+            for (Pair<String,Integer> t : timeDrones) {
+                if(d.getId().equals(t.first)) {
+                    availableDrones.add(new Pair<>(d,t.second));
+                }
+            }
+        }
+
+        Double totalCapacity = 0.0;
+        for (MedDispatchRec rec : reqlist) {
+            totalCapacity += rec.getRequirements().getCapacity();
+        }
+
+        Double finalTotalCapacity = totalCapacity;
+        availableDrones.removeIf(d -> d.first.getCapability().getCapacity() < finalTotalCapacity);
+
+
+        ArrayList<String> ids = new ArrayList<>();
+        for(Pair<Drone, Integer> d : availableDrones){
+            ids.add(d.first.getId());
+        }
+
+
+        return ResponseEntity.ok(ids);
 
     }
-
-
-
 }
+
+
+
+

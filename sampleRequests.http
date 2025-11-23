@@ -109,3 +109,42 @@ Content-type: application/json
     "value": "true"
   }
 ]
+
+### One medDispatchRec
+POST http://localhost:8080/api/v1/queryAvailableDrones
+Content-Type: application/json
+
+[
+    {
+      "id": 0,
+      "date": "2025-11-18",
+      "time": "15:00",
+      "requirements": {
+          "capacity": 1.0,
+          "cooling" : false
+      }
+    }
+]
+
+### Two medDispatchRec
+POST http://localhost:8080/api/v1/queryAvailableDrones
+Content-Type: application/json
+
+[
+  {
+    "id": 0,
+    "date": "2025-11-18",
+    "time": "15:00",
+    "requirements": {
+      "capacity": 5.0
+    }
+  },
+  {
+    "id": 1,
+    "date": "2025-11-19",
+    "time": "09:00",
+    "requirements": {
+      "capacity": 1.0
+    }
+  }
+]
