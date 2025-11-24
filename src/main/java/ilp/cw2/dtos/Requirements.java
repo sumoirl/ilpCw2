@@ -5,7 +5,6 @@ import lombok.Data;
 
 @Data
 public class Requirements {
-
     @JsonProperty("capacity")
     private Double capacity;
 
@@ -17,4 +16,8 @@ public class Requirements {
 
     @JsonProperty("maxCost")
     private Double maxCost;
+
+    public boolean maxCostNull() {
+        return maxCost == null;
+    }
 }

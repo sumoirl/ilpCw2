@@ -1,8 +1,11 @@
 package ilp.cw2.controllers;
 
 import ilp.cw2.dtos.*;
+import ilp.cw2.utils.Astar;
 import ilp.cw2.utils.Pair;
 import lombok.extern.apachecommons.CommonsLog;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +14,8 @@ import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
+import org.json.JSONObject;
 
 import static java.lang.Boolean.valueOf;
 
@@ -226,7 +231,7 @@ public class Cw2Controller {
     public ResponseEntity<ArrayList<String>> queryAvailableDrones(@RequestBody List<MedDispatchRec> reqlist) {
         Drone[] drones = restTemplate.getForObject((ilpEndpoint + "/drones"), Drone[].class);
         DroneForServicePoint[] dronesForServicePoints = restTemplate.getForObject((ilpEndpoint + "/drones-for-service-points"), DroneForServicePoint[].class);
-        DroneForServicePoint[] dronesForServicePoints = restTemplate.getForObject((ilpEndpoint + "/drones-for-service-points"), DroneForServicePoint[].class);
+        ServicePoint[] ServicePoints = restTemplate.getForObject((ilpEndpoint + "/service-points"), ServicePoint[].class);
 
         ArrayList<Drone> requirementDrones = new ArrayList<>();
         ArrayList<Pair<String, Integer>> timeDrones = new ArrayList<>();
@@ -303,15 +308,84 @@ public class Cw2Controller {
         Double finalTotalCapacity = totalCapacity;
         availableDrones.removeIf(d -> d.first.getCapability().getCapacity() < finalTotalCapacity);
 
+        ArrayList<Pair<Drone, LngLatAlt>> DispatchLocations =  new ArrayList<>();
+
+        for(Pair<Drone, Integer> drone:  availableDrones) {
+            for(ServicePoint servicePoint: ServicePoints) {
+                if(drone.second.equals(servicePoint.getId())) {
+                    DispatchLocations.add(new Pair<>(drone.first, servicePoint.getLocation()));
+                }
+            }
+        }
 
         ArrayList<String> ids = new ArrayList<>();
-        for(Pair<Drone, Integer> d : availableDrones){
-            ids.add(d.first.getId());
+
+        for(Pair<Drone, LngLatAlt> drone : DispatchLocations) {
+           Double totalDist = 0d;
+            for(MedDispatchRec rec : reqlist) {
+                totalDist += 2*(Math.sqrt(Math.pow((rec.getDelivery().getlng()-drone.second.getLng()),2)+Math.pow((rec.getDelivery().getlat()-drone.second.getLat()),2)));
+            }
+            Double moves = totalDist/0.00015;
+            Double totalCost = moves * drone.first.getCapability().getCostPerMove();
+            totalCost += drone.first.getCapability().getCostInitial() + drone.first.getCapability().getCostFinal();
+            Double proRataCost = totalCost / reqlist.size();
+            for(MedDispatchRec rec : reqlist) {
+                if(rec.getRequirements().maxCostNull()){
+                    System.out.println("meow");
+                    continue;
+                }
+                System.out.println(drone.first.getId());
+                System.out.println("ProRata Cost" + proRataCost);
+                System.out.println("Max Cost" + rec.getRequirements().getMaxCost());
+                if (proRataCost <= rec.getRequirements().getMaxCost()){
+                    ids.add(drone.first.getId());
+                }
+            }
         }
 
 
+
+
+        //for(Pair<Drone, LngLatAlt> d : DispatchLocations){
+          //  ids.add(d.first.getId());
+        //}
+
         return ResponseEntity.ok(ids);
 
+    }
+
+    @GetMapping("/test")
+    public ResponseEntity<String> test() throws JSONException {
+        Point start = new Point(-3.1894032589570713, 55.946379242828925);
+        //Point end = new Point(-3.18505627826093, 55.94458510360218);
+        Point end = new Point(-4.035788102304167, 55.764845368154454);
+        //Point end = new Point(-3.177111113717501, 55.98152418168104);
+        List<Point> path = Astar.getPath(start, end).first;
+
+        JSONObject response =  new JSONObject();
+        response.put("type", "FeatureCollection");
+
+        JSONArray featuresArray = new JSONArray();
+
+        JSONObject feature = new JSONObject();
+        feature.put("type", "Feature");
+        feature.put("properties", new JSONObject());
+        JSONObject geometry = new JSONObject();
+        JSONArray coordinates = new JSONArray();
+        for (Point point : path) {
+            JSONArray coordinate = new JSONArray();
+            coordinate.put(point.getlng());
+            coordinate.put(point.getlat());
+            coordinates.put(coordinate);
+        }
+        geometry.put("coordinates", coordinates);
+        geometry.put("type", "LineString");
+        feature.put("geometry", geometry);
+        featuresArray.put(feature);
+
+        response.put("features", featuresArray);
+
+        return  ResponseEntity.ok(response.toString());
     }
 }
 
