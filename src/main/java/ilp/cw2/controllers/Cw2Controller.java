@@ -1,8 +1,12 @@
 package ilp.cw2.controllers;
 
+import ilp.cw2.cw3.Cw3;
 import ilp.cw2.dtos.*;
+import ilp.cw2.dtos.Point;
 import ilp.cw2.utils.Astar;
 import ilp.cw2.utils.Pair;
+import ilp.cw2.utils.QueryAvailable;
+import ilp.cw2.utils.Raycasting;
 import lombok.extern.apachecommons.CommonsLog;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -11,12 +15,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import java.awt.*;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 import org.json.JSONObject;
 
+import static ilp.cw2.utils.haversine.haversineFunc;
 import static java.lang.Boolean.valueOf;
 
 @CommonsLog
@@ -233,122 +240,14 @@ public class Cw2Controller {
         DroneForServicePoint[] dronesForServicePoints = restTemplate.getForObject((ilpEndpoint + "/drones-for-service-points"), DroneForServicePoint[].class);
         ServicePoint[] ServicePoints = restTemplate.getForObject((ilpEndpoint + "/service-points"), ServicePoint[].class);
 
-        ArrayList<Drone> requirementDrones = new ArrayList<>();
-        ArrayList<Pair<String, Integer>> timeDrones = new ArrayList<>();
+       ArrayList<Pair<Drone, Point>> droneWithPoint = new ArrayList<>();
+       droneWithPoint = QueryAvailable.query(drones, dronesForServicePoints,ServicePoints, reqlist);
 
-        for (Drone drone : drones) {
-            Boolean matchesAll = true;
-            for (MedDispatchRec req : reqlist) {
-                Boolean matches = true;
-                while (matches) {
-                    matches = (req.getRequirements().getCooling() == null || req.getRequirements().getCooling() == drone.getCapability().isCooling());
-                    if (!matches) {
-                        break;
-                    }
-                    matches = (req.getRequirements().getHeating() == null || req.getRequirements().getHeating() == drone.getCapability().isHeating());
-                    break;
-                }
-                if (matches == false) {
-                    matchesAll = false;
-                    break;
-                }
-            }
-            if (matchesAll) {
-                requirementDrones.add(drone);
-            }
-        }
-
-        ArrayList<Pair<DronesAvailibility, Integer>> DroneAvail = new ArrayList();
-
-        for (DroneForServicePoint d : dronesForServicePoints) {
-            for (DronesAvailibility drone : d.getDrones()) {
-                DroneAvail.add(new Pair<>(drone, d.getServicePointId()));
-            }
-        }
-
-         for (Pair<DronesAvailibility,Integer> drone : DroneAvail) {
-
-            boolean coversAll = true;
-
-            for (MedDispatchRec req : reqlist) {
-                boolean covered = false;
-
-                for (Availibility a : drone.first.getAvailability()) {
-                    if (a.getDayOfWeek().equals(req.getDate().getDayOfWeek())
-                            && !req.getTime().isBefore(a.getFrom())
-                            && !req.getTime().isAfter(a.getUntil())) {
-                        covered = true;
-                        break;
-                    }
-                }
-                if (!covered) {
-                    coversAll = false;
-                    break;
-                }
-            }
-            if (coversAll) {
-                timeDrones.add(new Pair<>(drone.first.getId(), drone.second));
-            }
-        }
-         ArrayList<Pair<Drone, Integer>> availableDrones = new ArrayList<>();
-
-        for (Drone d : requirementDrones) {
-            for (Pair<String,Integer> t : timeDrones) {
-                if(d.getId().equals(t.first)) {
-                    availableDrones.add(new Pair<>(d,t.second));
-                }
-            }
-        }
-
-        Double totalCapacity = 0.0;
-        for (MedDispatchRec rec : reqlist) {
-            totalCapacity += rec.getRequirements().getCapacity();
-        }
-
-        Double finalTotalCapacity = totalCapacity;
-        availableDrones.removeIf(d -> d.first.getCapability().getCapacity() < finalTotalCapacity);
-
-        ArrayList<Pair<Drone, LngLatAlt>> DispatchLocations =  new ArrayList<>();
-
-        for(Pair<Drone, Integer> drone:  availableDrones) {
-            for(ServicePoint servicePoint: ServicePoints) {
-                if(drone.second.equals(servicePoint.getId())) {
-                    DispatchLocations.add(new Pair<>(drone.first, servicePoint.getLocation()));
-                }
-            }
-        }
 
         ArrayList<String> ids = new ArrayList<>();
-
-        for(Pair<Drone, LngLatAlt> drone : DispatchLocations) {
-           Double totalDist = 0d;
-            for(MedDispatchRec rec : reqlist) {
-                totalDist += 2*(Math.sqrt(Math.pow((rec.getDelivery().getlng()-drone.second.getLng()),2)+Math.pow((rec.getDelivery().getlat()-drone.second.getLat()),2)));
-            }
-            Double moves = totalDist/0.00015;
-            Double totalCost = moves * drone.first.getCapability().getCostPerMove();
-            totalCost += drone.first.getCapability().getCostInitial() + drone.first.getCapability().getCostFinal();
-            Double proRataCost = totalCost / reqlist.size();
-            for(MedDispatchRec rec : reqlist) {
-                if(rec.getRequirements().maxCostNull()){
-                    System.out.println("meow");
-                    continue;
-                }
-                System.out.println(drone.first.getId());
-                System.out.println("ProRata Cost" + proRataCost);
-                System.out.println("Max Cost" + rec.getRequirements().getMaxCost());
-                if (proRataCost <= rec.getRequirements().getMaxCost()){
-                    ids.add(drone.first.getId());
-                }
-            }
+        for(Pair<Drone, Point> d : droneWithPoint){
+            ids.add(d.first.getId());
         }
-
-
-
-
-        //for(Pair<Drone, LngLatAlt> d : DispatchLocations){
-          //  ids.add(d.first.getId());
-        //}
 
         return ResponseEntity.ok(ids);
 
@@ -356,11 +255,21 @@ public class Cw2Controller {
 
     @GetMapping("/test")
     public ResponseEntity<String> test() throws JSONException {
-        Point start = new Point(-3.1894032589570713, 55.946379242828925);
+        RestrictedArea[] areas = restTemplate.getForObject((ilpEndpoint + "/restricted-areas"), RestrictedArea[].class);
+
+        Point start = new Point(-3.1867334497823663, 55.94432778784571);
         //Point end = new Point(-3.18505627826093, 55.94458510360218);
-        Point end = new Point(-4.035788102304167, 55.764845368154454);
+        Point A = new Point(-3.1902699046107728, 55.9519373497846);
         //Point end = new Point(-3.177111113717501, 55.98152418168104);
-        List<Point> path = Astar.getPath(start, end).first;
+        Point B = new Point(-4.035788102304167, 55.764845368154454);
+
+        List<Raycasting.Line> lines = new ArrayList<>();
+        for(RestrictedArea area: areas) {
+            lines.addAll(area.areaToLines());
+        }
+        List<Point> path = Astar.getPath(start, A, lines).first;
+        path.addAll(Astar.getPath(path.getLast(),B, lines ).first);
+        path.addAll(Astar.getPath(path.getLast(),start, lines ).first);
 
         JSONObject response =  new JSONObject();
         response.put("type", "FeatureCollection");
@@ -387,6 +296,97 @@ public class Cw2Controller {
 
         return  ResponseEntity.ok(response.toString());
     }
+
+    @PostMapping(startPoint + "/calcDeliveryPath")
+    public ResponseEntity<DeliveryOutput> calcDeliveryPath(@RequestBody List<MedDispatchRec> reqlist) throws JSONException {
+        Drone[] drones = restTemplate.getForObject((ilpEndpoint + "/drones"), Drone[].class);
+        DroneForServicePoint[] dronesForServicePoints = restTemplate.getForObject((ilpEndpoint + "/drones-for-service-points"), DroneForServicePoint[].class);
+        ServicePoint[] ServicePoints = restTemplate.getForObject((ilpEndpoint + "/service-points"), ServicePoint[].class);
+        RestrictedArea[] areas = restTemplate.getForObject((ilpEndpoint + "/restricted-areas"), RestrictedArea[].class);
+
+        ArrayList<Pair<Drone,Point>>  droneWithPoint = new ArrayList<>();
+
+        droneWithPoint = QueryAvailable.query(drones, dronesForServicePoints,ServicePoints, reqlist);
+
+        Drone drone = droneWithPoint.getFirst().first;
+        Point start = droneWithPoint.getFirst().second;
+
+        ArrayList<Point> deliveryLocations = new ArrayList<>();
+
+        for(MedDispatchRec medDispatchRec: reqlist){
+            deliveryLocations.add(medDispatchRec.getDelivery());
+        }
+
+        deliveryLocations.addFirst(start);
+        deliveryLocations.addLast(start);
+
+        List<Raycasting.Line> lines = new ArrayList<>();
+        for(RestrictedArea area: areas) {
+            lines.addAll(area.areaToLines());
+        }
+
+        List<List<Point>> paths = new ArrayList<>();
+
+        for (int i = 0; i<deliveryLocations.size()-1; i++){
+            if(i == 0){
+                paths.add(Astar.getPath(deliveryLocations.get(0),deliveryLocations.get(1),lines).first);}
+            else{
+                paths.add(Astar.getPath(paths.getLast().getLast(), deliveryLocations.get(i+1),lines).first);
+            }
+        }
+
+        Double totalCost = 0d;
+        Integer totalMoves = 0;
+        DeliveryOutput deliveryOutput = new DeliveryOutput();
+        deliveryOutput.dronePaths = new DronePath();
+        deliveryOutput.dronePaths.deliveries = new ArrayList<>();
+
+
+        for (int i = 0; i< reqlist.size(); i++){
+
+            DronePath dronePath = new DronePath();
+            Deliveries deliveries = new Deliveries();
+            deliveries.flightPath = paths.get(i);
+            deliveries.flightPath.add(paths.get(i).getLast());
+            deliveries.deliveryId = String.valueOf(reqlist.get(i).getId());
+
+
+            deliveryOutput.dronePaths.deliveries.add(deliveries);
+
+            totalMoves += paths.get(i).size() - 1;
+        }
+
+        deliveryOutput.dronePaths.droneId= drone.getId();
+        Deliveries deliveries = new Deliveries();
+        deliveries.flightPath = paths.getLast();
+        deliveries.flightPath.add(paths.getLast().getLast());
+        deliveries.deliveryId = null;
+
+
+        deliveryOutput.dronePaths.deliveries.add(deliveries);
+
+        totalMoves += paths.getLast().size() - 1;
+
+        totalCost = (totalMoves * drone.getCapability().getCostPerMove()) +drone.getCapability().getCostInitial() + drone.getCapability().getCostFinal();
+
+        deliveryOutput.totalCost = totalCost;
+        deliveryOutput.totalMoves = totalMoves;
+
+        Double totalKm = 0d;
+        for (List<Point> path : paths) {
+            for (int i = 1; i < path.size(); i++) {
+                Point p1 = path.get(i - 1);
+                Point p2 = path.get(i);
+                totalKm += haversineFunc(p1.getlat(), p1.getlng(), p2.getlat(), p2.getlng());
+            }
+        }
+
+        Cw3.updateDroneStats(drone.getId(), totalKm);
+
+        return ResponseEntity.ok(deliveryOutput);
+    }
+
+
 }
 
 

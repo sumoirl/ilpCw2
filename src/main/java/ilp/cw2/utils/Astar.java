@@ -60,9 +60,7 @@ public class Astar {
         return Math.sqrt(Math.pow(p1.getlng() - p2.getlng(), 2) + Math.pow(p1.getlat() - p2.getlat(), 2));
     }
 
-    public static Pair<List<Point>, Double> getPath(Point start, Point end) {
-
-
+    public static Pair<List<Point>, Double> getPath(Point start, Point end, List<Raycasting.Line> lines) {
         Set<Point> visited = new HashSet<>();
         HashMap<Point,Node> map = new HashMap<>();
         PriorityQueue<Node> pq = new PriorityQueue<>(Comparator.comparingDouble(node -> node.f));
@@ -77,6 +75,7 @@ public class Astar {
             Node current = pq.poll();
             if(visited.contains(current.Location))  continue;
             visited.add(current.Location);
+            map.remove(current.Location);
 
             if(getDistance(current.Location, end) <= 0.00015){
               last = current;
@@ -88,6 +87,15 @@ public class Astar {
             for(Point neighbor: neighbors){
 
                 if(visited.contains(neighbor)) continue;
+
+                Raycasting.Line currentLine = new Raycasting.Line(current.Location, neighbor);
+                Boolean intersects = false;
+                for(Raycasting.Line line: lines) {
+                    intersects = Raycasting.intersects(currentLine, line);
+                    if(intersects) break;
+                }
+                if(intersects) continue;
+                
                 Double g = current.g + 0.00015;
                 Double h = getDistance(neighbor, end) * 1.1;
                 Double f = g + h;

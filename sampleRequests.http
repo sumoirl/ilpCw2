@@ -158,3 +158,36 @@ Content-Type: application/json
     }
   }
 ]
+
+### calcDeliveryPath
+POST http://localhost:8080/api/v1/calcDeliveryPath
+Content-Type: application/json
+
+[
+  {
+    "id": 0,
+    "date": "2025-11-18",
+    "time": "15:00",
+    "requirements": {
+      "capacity": 5.0
+    },
+    "delivery": {
+      "lng": -3.1867334497823663,
+      "lat": 55.94432778784571
+
+    }
+  },
+  {
+    "id": 1,
+    "date": "2025-11-19",
+    "time": "09:00",
+    "requirements": {
+      "capacity": 1.0,
+      "maxCost": 50000
+    },
+    "delivery": {
+      "lng": -3.1902699046107728,
+      "lat":  55.9519373497846
+    }
+  }
+]
