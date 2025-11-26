@@ -15,8 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
-import java.awt.*;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -338,32 +336,34 @@ public class Cw2Controller {
         Double totalCost = 0d;
         Integer totalMoves = 0;
         DeliveryOutput deliveryOutput = new DeliveryOutput();
-        deliveryOutput.dronePaths = new DronePath();
-        deliveryOutput.dronePaths.deliveries = new ArrayList<>();
+        deliveryOutput.dronePaths = new ArrayList<>();
 
+        // Create a new drone path (A drone id and it's associated deliveries)
+        DronePath dronePath = new DronePath();
+        dronePath.droneId = drone.getId();
+        dronePath.deliveries = new ArrayList<>();
 
-        for (int i = 0; i< reqlist.size(); i++){
-
-            DronePath dronePath = new DronePath();
-            Deliveries deliveries = new Deliveries();
-            deliveries.flightPath = paths.get(i);
-            deliveries.flightPath.add(paths.get(i).getLast());
-            deliveries.deliveryId = String.valueOf(reqlist.get(i).getId());
-
-
-            deliveryOutput.dronePaths.deliveries.add(deliveries);
+        for (int i = 0; i < reqlist.size(); i++){
+            // Create new delivery (A med delivery id and its associated route)
+            Delivery delivery = new Delivery();
+            delivery.flightPath = paths.get(i);
+            delivery.flightPath.add(paths.get(i).getLast());
+            delivery.deliveryId = String.valueOf(reqlist.get(i).getId());
+            dronePath.deliveries.add(delivery);
 
             totalMoves += paths.get(i).size() - 1;
         }
 
-        deliveryOutput.dronePaths.droneId= drone.getId();
-        Deliveries deliveries = new Deliveries();
-        deliveries.flightPath = paths.getLast();
-        deliveries.flightPath.add(paths.getLast().getLast());
-        deliveries.deliveryId = null;
+        // We also need the return journey
+        Delivery delivery = new Delivery();
+        delivery.flightPath = paths.getLast();
+        delivery.flightPath.add(paths.getLast().getLast());
+        delivery.deliveryId = null;
+        dronePath.deliveries.add(delivery);
+        totalMoves += paths.getLast().size() - 1;
 
-
-        deliveryOutput.dronePaths.deliveries.add(deliveries);
+        // Finally we add the drone path
+        deliveryOutput.dronePaths.add(dronePath);
 
         totalMoves += paths.getLast().size() - 1;
 
@@ -386,8 +386,113 @@ public class Cw2Controller {
         return ResponseEntity.ok(deliveryOutput);
     }
 
+    @PostMapping(startPoint + "/calcMultiDeliveryPath")
+    public ResponseEntity<DeliveryOutput> calcMultiDeliveryPath(@RequestBody List<MedDispatchRec> reqlist) throws JSONException {
+        Drone[] drones = restTemplate.getForObject((ilpEndpoint + "/drones"), Drone[].class);
+        DroneForServicePoint[] dronesForServicePoints = restTemplate.getForObject((ilpEndpoint + "/drones-for-service-points"), DroneForServicePoint[].class);
+        ServicePoint[] ServicePoints = restTemplate.getForObject((ilpEndpoint + "/service-points"), ServicePoint[].class);
+        RestrictedArea[] areas = restTemplate.getForObject((ilpEndpoint + "/restricted-areas"), RestrictedArea[].class);
 
-}
+        //split records
+
+        List<MedDispatchRec> group1 =  new ArrayList<>();
+        group1 = reqlist.subList(0, reqlist.size()/2);
+        //System.out.println(group1.size());
+        List<MedDispatchRec> group2 = new ArrayList<>();
+        group2 = reqlist.subList(reqlist.size()/2, reqlist.size());
+        //System.out.println(group2.size());
+
+        ArrayList<List<MedDispatchRec>> groups = new ArrayList<>();
+        groups.add(group1);
+        groups.add(group2);
+
+        System.out.println("i hate being in a list" + groups);
+
+        Double totalCost = 0d;
+        Integer totalMoves = 0;
+        DeliveryOutput deliveryOutput = new DeliveryOutput();
+        //get path for each group
+
+        for(List<MedDispatchRec> group: groups){
+
+            System.out.println(group);
+            ArrayList<Pair<Drone,Point>>  droneWithPoint;
+            droneWithPoint = QueryAvailable.query(drones, dronesForServicePoints,ServicePoints, group);
+            System.out.println(droneWithPoint);
+
+            if(droneWithPoint.isEmpty()){
+                System.out.println("MEOW");
+                return ResponseEntity.ok(new DeliveryOutput());
+            }
+
+            Drone drone = droneWithPoint.getFirst().first;
+            Point start = droneWithPoint.getFirst().second;
+
+            ArrayList<Point> deliveryLocations = new ArrayList<>();
+            for(MedDispatchRec medDispatchRec: reqlist){
+                deliveryLocations.add(medDispatchRec.getDelivery());
+            }
+            deliveryLocations.addFirst(start);
+            deliveryLocations.addLast(start);
+
+            List<Raycasting.Line> lines = new ArrayList<>();
+            for(RestrictedArea area: areas) {
+                lines.addAll(area.areaToLines());
+            }
+
+            List<List<Point>> paths = new ArrayList<>();
+
+            for (int i = 0; i<deliveryLocations.size()-1; i++){
+                if(i == 0){
+                    paths.add(Astar.getPath(deliveryLocations.get(0),deliveryLocations.get(1),lines).first);}
+                else{
+                    paths.add(Astar.getPath(paths.getLast().getLast(), deliveryLocations.get(i+1),lines).first);
+                }
+            }
+
+            deliveryOutput.dronePaths = new ArrayList<>();
+            DronePath dronePath = new DronePath();
+            dronePath.droneId = drone.getId();
+            dronePath.deliveries = new ArrayList<>();
+
+            for (int i = 0; i < group.size(); i++){
+                Delivery delivery = new Delivery();
+                delivery.flightPath = paths.get(i);
+                delivery.flightPath.add(paths.get(i).getLast());
+                delivery.deliveryId = String.valueOf(group.get(i).getId());
+                dronePath.deliveries.add(delivery);
+
+                Integer moves = paths.get(i).size() - 1;
+                totalMoves += paths.get(i).size() - 1;
+                Double cost = moves * drone.getCapability().getCostPerMove() +  drone.getCapability().getCostInitial() + drone.getCapability().getCostFinal();
+                totalCost +=  cost;
+            }
+            // We also need the return journey
+            Delivery delivery = new Delivery();
+            delivery.flightPath = paths.getLast();
+            delivery.flightPath.add(paths.getLast().getLast());
+            delivery.deliveryId = null;
+            dronePath.deliveries.add(delivery);
+            totalMoves += paths.getLast().size() - 1;
+
+            // Finally we add the drone path
+
+            deliveryOutput.dronePaths.add(dronePath);
+
+
+            totalMoves += paths.getLast().size() - 1;
+
+        }
+        deliveryOutput.totalCost = totalCost;
+        deliveryOutput.totalMoves = totalMoves;
+
+        System.out.println(totalMoves);
+        System.out.println(totalCost);
+
+        return ResponseEntity.ok(deliveryOutput);
+        }
+    }
+
 
 
 

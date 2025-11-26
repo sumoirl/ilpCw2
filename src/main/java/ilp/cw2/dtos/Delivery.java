@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
-public class Deliveries {
+public class Delivery {
 
     @JsonProperty("deliveryId")
     public String deliveryId;

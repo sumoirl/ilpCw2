@@ -159,35 +159,34 @@ Content-Type: application/json
   }
 ]
 
-### calcDeliveryPath
-POST http://localhost:8080/api/v1/calcDeliveryPath
+
+### multi
+POST http://localhost:8080/api/v1/calcMultiDeliveryPath
 Content-Type: application/json
 
 [
   {
-    "id": 0,
-    "date": "2025-11-18",
-    "time": "15:00",
+    "id": 201,
+    "date": "2025-12-01",
+    "time": "08:00:00",
+    "delivery": { "lng": -3.1865, "lat": 55.9447 },
     "requirements": {
-      "capacity": 5.0
-    },
-    "delivery": {
-      "lng": -3.1867334497823663,
-      "lat": 55.94432778784571
-
+      "capacity": 5.0,
+      "cooling": false,
+      "heating": false,
+      "maxCost": null
     }
   },
   {
-    "id": 1,
-    "date": "2025-11-19",
-    "time": "09:00",
+    "id": 202,
+    "date": "2025-12-01",
+    "time": "19:00:00",
+    "delivery": { "lng": -3.1870, "lat": 55.9450 },
     "requirements": {
-      "capacity": 1.0,
-      "maxCost": 50000
-    },
-    "delivery": {
-      "lng": -3.1902699046107728,
-      "lat":  55.9519373497846
+      "capacity": 5.0,
+      "cooling": false,
+      "heating": false,
+      "maxCost": null
     }
   }
 ]
