@@ -1,5 +1,6 @@
 package ilp.cw2.dtos;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
@@ -24,5 +25,13 @@ public class MedDispatchRec {
     @JsonProperty("delivery")
     private Point delivery;
 
+    @JsonIgnore
+    public boolean isDateNull() {
+        return date == null;
+    }
 
+    @JsonIgnore
+    public boolean isTimeNull() {
+        return date == null;
+    }
 }

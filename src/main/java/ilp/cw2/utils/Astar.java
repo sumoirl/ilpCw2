@@ -108,7 +108,7 @@ public class Astar {
                 }
                 else{
                     if(f < existingNode.f){
-                        existingNode.f = f;
+                        existingNode = new Node(neighbor, current, g, h, f);
                         map.put(neighbor, existingNode);
                         pq.add(existingNode);
                     }
@@ -119,11 +119,13 @@ public class Astar {
         ArrayList<Point> path = new ArrayList<>();
 
         if(last == null){
-         return new Pair<>(path, -1.0);
+
+            return new Pair<>(path, -1.0);
         }
 
+
         double finalCost = last.g;
-        while(last.previous != null){
+        while(last!= null){
             path.add(last.Location);
             last = last.previous;
         }

@@ -3,10 +3,7 @@ package ilp.cw2.controllers;
 import ilp.cw2.cw3.Cw3;
 import ilp.cw2.dtos.*;
 import ilp.cw2.dtos.Point;
-import ilp.cw2.utils.Astar;
-import ilp.cw2.utils.Pair;
-import ilp.cw2.utils.QueryAvailable;
-import ilp.cw2.utils.Raycasting;
+import ilp.cw2.utils.*;
 import lombok.extern.apachecommons.CommonsLog;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -251,8 +248,8 @@ public class Cw2Controller {
 
     }
 
-    @GetMapping("/test")
-    public ResponseEntity<String> test() throws JSONException {
+    @PostMapping(startPoint + "/calcDeliveryPathAsGeoJson")
+    public ResponseEntity<String> calcDeliveryPathAsGeoJson() throws JSONException {
         RestrictedArea[] areas = restTemplate.getForObject((ilpEndpoint + "/restricted-areas"), RestrictedArea[].class);
 
         Point start = new Point(-3.1867334497823663, 55.94432778784571);
@@ -302,9 +299,15 @@ public class Cw2Controller {
         ServicePoint[] ServicePoints = restTemplate.getForObject((ilpEndpoint + "/service-points"), ServicePoint[].class);
         RestrictedArea[] areas = restTemplate.getForObject((ilpEndpoint + "/restricted-areas"), RestrictedArea[].class);
 
+
         ArrayList<Pair<Drone,Point>>  droneWithPoint = new ArrayList<>();
 
         droneWithPoint = QueryAvailable.query(drones, dronesForServicePoints,ServicePoints, reqlist);
+
+        if(droneWithPoint.isEmpty()){
+            DeliveryOutput deliveryOutput = Multi.getMultiPath(reqlist,drones,dronesForServicePoints,ServicePoints,areas);
+            return ResponseEntity.ok(deliveryOutput);
+        }else{
 
         Drone drone = droneWithPoint.getFirst().first;
         Point start = droneWithPoint.getFirst().second;
@@ -373,18 +376,23 @@ public class Cw2Controller {
         deliveryOutput.totalMoves = totalMoves;
 
         Double totalKm = 0d;
+        Double distance = 0d;
         for (List<Point> path : paths) {
             for (int i = 1; i < path.size(); i++) {
                 Point p1 = path.get(i - 1);
                 Point p2 = path.get(i);
-                totalKm += haversineFunc(p1.getlat(), p1.getlng(), p2.getlat(), p2.getlng());
+                distance = haversineFunc(p1.getlat(), p1.getlng(), p2.getlat(), p2.getlng());
+                totalKm += distance;
             }
         }
 
         Cw3.updateDroneStats(drone.getId(), totalKm);
 
+        List<Point> newList = new ArrayList<>(deliveryLocations.subList(1, deliveryLocations.size() - 1));
+        Cw3.logIndividualJourney(drone.getId(),start,newList,totalKm);
+
         return ResponseEntity.ok(deliveryOutput);
-    }
+    }}
 
     @PostMapping(startPoint + "/calcMultiDeliveryPath")
     public ResponseEntity<DeliveryOutput> calcMultiDeliveryPath(@RequestBody List<MedDispatchRec> reqlist) throws JSONException {
@@ -406,7 +414,6 @@ public class Cw2Controller {
         groups.add(group1);
         groups.add(group2);
 
-        System.out.println("i hate being in a list" + groups);
 
         Double totalCost = 0d;
         Integer totalMoves = 0;
@@ -415,13 +422,13 @@ public class Cw2Controller {
 
         for(List<MedDispatchRec> group: groups){
 
-            System.out.println(group);
+
             ArrayList<Pair<Drone,Point>>  droneWithPoint;
             droneWithPoint = QueryAvailable.query(drones, dronesForServicePoints,ServicePoints, group);
-            System.out.println(droneWithPoint);
+
 
             if(droneWithPoint.isEmpty()){
-                System.out.println("MEOW");
+
                 return ResponseEntity.ok(new DeliveryOutput());
             }
 
@@ -429,11 +436,13 @@ public class Cw2Controller {
             Point start = droneWithPoint.getFirst().second;
 
             ArrayList<Point> deliveryLocations = new ArrayList<>();
-            for(MedDispatchRec medDispatchRec: reqlist){
+            for(MedDispatchRec medDispatchRec: group){
                 deliveryLocations.add(medDispatchRec.getDelivery());
             }
             deliveryLocations.addFirst(start);
             deliveryLocations.addLast(start);
+
+            //System.out.println("Locations size" + deliveryLocations.size());
 
             List<Raycasting.Line> lines = new ArrayList<>();
             for(RestrictedArea area: areas) {
@@ -443,10 +452,11 @@ public class Cw2Controller {
             List<List<Point>> paths = new ArrayList<>();
 
             for (int i = 0; i<deliveryLocations.size()-1; i++){
-                if(i == 0){
-                    paths.add(Astar.getPath(deliveryLocations.get(0),deliveryLocations.get(1),lines).first);}
-                else{
-                    paths.add(Astar.getPath(paths.getLast().getLast(), deliveryLocations.get(i+1),lines).first);
+                if(i == 0) {
+                    paths.add(Astar.getPath(deliveryLocations.get(0), deliveryLocations.get(1), lines).first);
+
+                } else {
+                    paths.add(Astar.getPath(paths.getLast().getLast(), deliveryLocations.get(i + 1), lines).first);
                 }
             }
 
@@ -461,6 +471,7 @@ public class Cw2Controller {
                 delivery.flightPath.add(paths.get(i).getLast());
                 delivery.deliveryId = String.valueOf(group.get(i).getId());
                 dronePath.deliveries.add(delivery);
+                deliveryOutput.dronePaths.add(dronePath);
 
                 Integer moves = paths.get(i).size() - 1;
                 totalMoves += paths.get(i).size() - 1;
@@ -476,8 +487,9 @@ public class Cw2Controller {
             totalMoves += paths.getLast().size() - 1;
 
             // Finally we add the drone path
-
             deliveryOutput.dronePaths.add(dronePath);
+
+
 
 
             totalMoves += paths.getLast().size() - 1;
@@ -486,8 +498,7 @@ public class Cw2Controller {
         deliveryOutput.totalCost = totalCost;
         deliveryOutput.totalMoves = totalMoves;
 
-        System.out.println(totalMoves);
-        System.out.println(totalCost);
+
 
         return ResponseEntity.ok(deliveryOutput);
         }

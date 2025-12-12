@@ -99,32 +99,23 @@ Content-type: application/json
 
 [
   {
-    "attribute": "capacity",
-    "operator": "<",
-    "value": "8"
+    "attribute": "costFinal",
+    "operator": "=",
+    "value": "3.5"
   },
   {
-    "attribute": "cooling",
+    "attribute": "maxMoves",
     "operator": "=",
-    "value": "true"
+    "value": "1500"
   }
 ]
 
 ### One medDispatchRec
-POST http://localhost:8080/api/v1/queryAvailableDrones
+POST http://localhost:8080/api/v1/calcDeliveryPathAsGeoJson
 Content-Type: application/json
 
-[
-    {
-      "id": 0,
-      "date": "2025-11-18",
-      "time": "15:00",
-      "requirements": {
-          "capacity": 1.0,
-          "cooling" : false
-      }
-    }
-]
+[ { "id": 1, "date": "2025-12-12", "time": "14:30:00", "requirements": { "capacity": 8.0, "cooling": true, "maxCost": 11.0 }, "delivery": { "lng": -3.1907237642840363, "lat": 55.94941687101488 } }, { "id": 2, "date": "2025-12-12", "time": "14:30:00", "requirements": { "capacity": 4.0 }, "delivery": { "lng": -3.1843055426973828, "lat": 55.94668429393913 } }, { "id": 3, "date": "2025-12-12", "time": "14:30:00", "requirements": { "capacity": 7.0, "cooling": true, "maxCost": 10.0 }, "delivery": { "lng": -3.189799207630236, "lat": 55.94279498507413 } }, { "id": 4, "date": "2025-12-12", "time": "14:20:00", "requirements": { "capacity": 6.0, "heating": true }, "delivery": { "lng": -3.1844710805008623, "lat": 55.94664821172111 } } ]
+
 
 ### Two medDispatchRec
 POST http://localhost:8080/api/v1/queryAvailableDrones
@@ -161,7 +152,7 @@ Content-Type: application/json
 
 
 ### multi
-POST http://localhost:8080/api/v1/calcMultiDeliveryPath
+POST http://localhost:8080/api/v1/calcDeliveryPath
 Content-Type: application/json
 
 [
@@ -189,4 +180,17 @@ Content-Type: application/json
       "maxCost": null
     }
   }
+]
+
+### single
+POST http://localhost:8080/api/v1/calcDeliveryPath
+Content-Type: application/json
+
+[
+  {
+    "id": 201,
+    "delivery": { "lng": -3.2056, "lat": 55.9447 },
+    "requirements": {
+      "capacity": 6.0
+  }}
 ]
