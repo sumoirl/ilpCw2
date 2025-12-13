@@ -127,24 +127,35 @@ public class Cw2Controller {
 
                 switch(query.getAttribute()){
                     case "cooling":
-                        matchesCurrent = d.getCapability().isCooling() == Boolean.parseBoolean(query.getValue());
-                        break;
+                        if(Objects.equals(query.getOperator(), "=")) {
+                            matchesCurrent = d.getCapability().isCooling() == Boolean.parseBoolean(query.getValue());
+                            break;
+                        }else if (Objects.equals(query.getOperator(), "!=")) {
+                            matchesCurrent = d.getCapability().isCooling() != Boolean.parseBoolean(query.getValue());
+                            break;
+                        }
+
                     case "heating":
-                        matchesCurrent = d.getCapability().isHeating() == Boolean.parseBoolean(query.getValue());
-                        break;
+                        if(Objects.equals(query.getOperator(), "=")) {
+                            matchesCurrent = d.getCapability().isHeating() == Boolean.parseBoolean(query.getValue());
+                            break;
+                        }else if (Objects.equals(query.getOperator(), "!=")) {
+                            matchesCurrent = d.getCapability().isHeating() != Boolean.parseBoolean(query.getValue());
+                            break;
+                        }
                     case "capacity":
                         switch (query.getOperator()){
                             case "=":
-                               matchesCurrent = d.getCapability().getCapacity() == Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getCapacity() == Double.parseDouble(query.getValue());
                                 break;
                             case "!=":
                                 matchesCurrent =d.getCapability().getCapacity() != Double.parseDouble(query.getValue());
                                 break;
                             case "<":
-                               matchesCurrent = d.getCapability().getCapacity() < Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getCapacity() < Double.parseDouble(query.getValue());
                                 break;
                             case ">":
-                                matchesCurrent = d.getCapability().getCapacity() > Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getCapacity() > Double.parseDouble(query.getValue());
 
                                 break;
 
@@ -153,31 +164,31 @@ public class Cw2Controller {
                     case "maxMoves":
                         switch(query.getOperator()){
                             case "=":
-                                matchesCurrent = d.getCapability().getMaxMoves() == Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getMaxMoves() == Double.parseDouble(query.getValue());
                                 break;
                             case  "!=":
-                                matchesCurrent = d.getCapability().getMaxMoves() != Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getMaxMoves() != Double.parseDouble(query.getValue());
                                 break;
                             case  "<":
-                                matchesCurrent = d.getCapability().getMaxMoves() < Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getMaxMoves() < Double.parseDouble(query.getValue());
                                 break;
                             case ">":
-                                matchesCurrent = d.getCapability().getMaxMoves() > Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getMaxMoves() > Double.parseDouble(query.getValue());
                         }
                         break;
                     case  "costPerMove":
                         switch(query.getOperator()){
                             case "=":
-                                matchesCurrent = d.getCapability().getCostPerMove() == Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getCostPerMove() == Double.parseDouble(query.getValue());
                                 break;
                             case "!=":
-                                matchesCurrent = d.getCapability().getCostPerMove() != Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getCostPerMove() != Double.parseDouble(query.getValue());
                                 break;
                             case "<":
-                                matchesCurrent = d.getCapability().getCostPerMove() < Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getCostPerMove() < Double.parseDouble(query.getValue());
                                 break;
                             case ">":
-                                matchesCurrent = d.getCapability().getCostPerMove() > Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getCostPerMove() > Double.parseDouble(query.getValue());
                                 break;
 
                         }
@@ -185,32 +196,32 @@ public class Cw2Controller {
                     case "costInitial":
                         switch(query.getOperator()){
                             case "=":
-                                matchesCurrent = d.getCapability().getCostInitial() == Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getCostInitial() == Double.parseDouble(query.getValue());
                                 break;
                             case "!=":
-                                matchesCurrent = d.getCapability().getCostInitial() != Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getCostInitial() != Double.parseDouble(query.getValue());
                                 break;
                             case ">":
-                                matchesCurrent = d.getCapability().getCostInitial() > Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getCostInitial() > Double.parseDouble(query.getValue());
                                 break;
                             case "<":
-                                matchesCurrent = d.getCapability().getCostInitial() < Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getCostInitial() < Double.parseDouble(query.getValue());
                                 break;
                         }
                         break;
                     case "costFinal":
                         switch(query.getOperator()){
                             case "=":
-                                matchesCurrent = d.getCapability().getCostFinal() == Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getCostFinal() == Double.parseDouble(query.getValue());
                                 break;
                             case "!=":
-                                matchesCurrent = d.getCapability().getCostFinal() != Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getCostFinal() != Double.parseDouble(query.getValue());
                                 break;
                             case "<":
-                                matchesCurrent = d.getCapability().getCostFinal() < Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getCostFinal() < Double.parseDouble(query.getValue());
                                 break;
                             case  ">":
-                                matchesCurrent = d.getCapability().getCostFinal() > Integer.parseInt(query.getValue());
+                                matchesCurrent = d.getCapability().getCostFinal() > Double.parseDouble(query.getValue());
                                 break;
                         }
                         break;
@@ -218,12 +229,12 @@ public class Cw2Controller {
                 if (!matchesCurrent) {
                     matchesAll = false;
                     break;
-                 }
+                }
             }
 
-        if (matchesAll) {
-            droneIds.add(d.getId());
-        }
+            if (matchesAll) {
+                droneIds.add(d.getId());
+            }
 
         }
         return ResponseEntity.ok(droneIds);
@@ -248,8 +259,8 @@ public class Cw2Controller {
 
     }
 
-    @PostMapping(startPoint + "/calcDeliveryPathAsGeoJson")
-    public ResponseEntity<String> calcDeliveryPathAsGeoJson() throws JSONException {
+    @GetMapping("/test")
+    public ResponseEntity<String> test() throws JSONException {
         RestrictedArea[] areas = restTemplate.getForObject((ilpEndpoint + "/restricted-areas"), RestrictedArea[].class);
 
         Point start = new Point(-3.1867334497823663, 55.94432778784571);
@@ -501,6 +512,83 @@ public class Cw2Controller {
 
 
         return ResponseEntity.ok(deliveryOutput);
+        }
+
+    @PostMapping(startPoint + "/calcDeliveryPathAsGeoJson")
+    public ResponseEntity<String> calcDeliveryPathAsGeoJson(@RequestBody List<MedDispatchRec> reqlist) throws JSONException{
+        Drone[] drones = restTemplate.getForObject((ilpEndpoint + "/drones"), Drone[].class);
+        DroneForServicePoint[] dronesForServicePoints = restTemplate.getForObject((ilpEndpoint + "/drones-for-service-points"), DroneForServicePoint[].class);
+        ServicePoint[] ServicePoints = restTemplate.getForObject((ilpEndpoint + "/service-points"), ServicePoint[].class);
+        RestrictedArea[] areas = restTemplate.getForObject((ilpEndpoint + "/restricted-areas"), RestrictedArea[].class);
+
+        ArrayList<Pair<Drone,Point>>  droneWithPoint = new ArrayList<>();
+
+        droneWithPoint = QueryAvailable.query(drones, dronesForServicePoints,ServicePoints, reqlist);
+
+        if (droneWithPoint.isEmpty()){
+            return ResponseEntity.ok("");
+        }
+
+        Drone drone = droneWithPoint.getFirst().first;
+        Point start = droneWithPoint.getFirst().second;
+
+        ArrayList<Point> deliveryLocations = new ArrayList<>();
+
+        for(MedDispatchRec medDispatchRec: reqlist){
+            deliveryLocations.add(medDispatchRec.getDelivery());
+        }
+
+        deliveryLocations.addFirst(start);
+        deliveryLocations.addLast(start);
+
+        List<Raycasting.Line> lines = new ArrayList<>();
+        for(RestrictedArea area: areas) {
+            lines.addAll(area.areaToLines());
+        }
+
+        List<List<Point>> paths = new ArrayList<>();
+
+        for (int i = 0; i<deliveryLocations.size()-1; i++){
+            if(i == 0){
+                paths.add(Astar.getPath(deliveryLocations.get(0),deliveryLocations.get(1),lines).first);}
+            else{
+                paths.add(Astar.getPath(paths.getLast().getLast(), deliveryLocations.get(i+1),lines).first);
+            }
+        }
+            ArrayList<Point> path = new ArrayList<>();
+
+            for(List<Point> Path: paths){
+                for(Point point: Path){
+                    path.add(point);
+                }
+            }
+
+
+            JSONObject response =  new JSONObject();
+            response.put("type", "FeatureCollection");
+
+            JSONArray featuresArray = new JSONArray();
+
+            JSONObject feature = new JSONObject();
+            feature.put("type", "Feature");
+            feature.put("properties", new JSONObject());
+            JSONObject geometry = new JSONObject();
+            JSONArray coordinates = new JSONArray();
+            for (Point point : path) {
+                JSONArray coordinate = new JSONArray();
+                coordinate.put(point.getlng());
+                coordinate.put(point.getlat());
+                coordinates.put(coordinate);
+            }
+            geometry.put("coordinates", coordinates);
+            geometry.put("type", "LineString");
+            feature.put("geometry", geometry);
+            featuresArray.put(feature);
+
+            response.put("features", featuresArray);
+
+
+            return  ResponseEntity.ok(response.toString());
         }
     }
 
