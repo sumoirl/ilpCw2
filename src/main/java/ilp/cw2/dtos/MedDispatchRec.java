@@ -2,12 +2,14 @@ package ilp.cw2.dtos;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Data
+@Builder
 public class MedDispatchRec {
 
     @JsonProperty("id")
@@ -24,6 +26,7 @@ public class MedDispatchRec {
 
     @JsonProperty("delivery")
     private Point delivery;
+
 
     @JsonIgnore
     public boolean isDateNull() {

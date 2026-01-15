@@ -1,9 +1,11 @@
 package ilp.cw2.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class Requirements {
     @JsonProperty("capacity")
     private Double capacity;
