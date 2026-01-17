@@ -1,10 +1,8 @@
 package ilp.cw2;
 
-import ilp.cw2.dtos.DeliveryOutput;
-import ilp.cw2.dtos.MedDispatchRec;
-import ilp.cw2.dtos.Point;
-import ilp.cw2.dtos.Requirements;
-import org.junit.jupiter.api.RepeatedTest;
+import ilp.cw2.dtos.*;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -13,11 +11,12 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Random;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 
-public class SoftwareTestingTest {
+public class SystemTesting {
 
     private final TestRestTemplate restTemplate = new TestRestTemplate();
 
@@ -69,6 +68,28 @@ public class SoftwareTestingTest {
         }
         return dispatches;
     }
+
+    @Test
+    void viewOutput(){
+        String url = "http://localhost:"+port+"/api/v1/calcDeliveryPath";
+
+        ArrayList<MedDispatchRec> medDispatchRecs = generateDispatches(2);
+        String result = restTemplate.postForEntity(url, medDispatchRecs, String.class).getBody();
+
+        System.out.println(result);
+
+        assertTrue(isValidJson(result));
+    }
+
+    public boolean isValidJson(String json){
+        try{
+            new JSONObject(json);
+        } catch (JSONException e){
+            return false;
+        }
+        return true;
+    }
+
 
 
 
