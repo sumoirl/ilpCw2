@@ -4,7 +4,6 @@ package ilp.cw2;
 import ilp.cw2.dtos.*;
 import ilp.cw2.utils.Astar;
 import ilp.cw2.utils.Pair;
-import ilp.cw2.utils.QueryAvailable;
 import ilp.cw2.utils.Raycasting;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,16 +12,13 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
 
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class UnitTesting {
+     class UnitTests {
 
     private final TestRestTemplate restTemplate = new TestRestTemplate();
 
@@ -32,7 +28,7 @@ public class UnitTesting {
     private final String ilpEndpoint;
 
     @Autowired
-    UnitTesting(String ilpEndpoint){ this.ilpEndpoint = ilpEndpoint; }
+    UnitTests(String ilpEndpoint){ this.ilpEndpoint = ilpEndpoint; }
 
     @Test
     void checkMoveSize(){

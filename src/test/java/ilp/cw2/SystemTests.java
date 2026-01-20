@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 
-public class SystemTesting {
+public class SystemTests {
 
     private final TestRestTemplate restTemplate = new TestRestTemplate();
 
