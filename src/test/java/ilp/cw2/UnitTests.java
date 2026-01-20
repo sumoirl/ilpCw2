@@ -5,6 +5,7 @@ import ilp.cw2.dtos.*;
 import ilp.cw2.utils.Astar;
 import ilp.cw2.utils.Pair;
 import ilp.cw2.utils.Raycasting;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -30,7 +31,7 @@ import java.util.List;
     @Autowired
     UnitTests(String ilpEndpoint){ this.ilpEndpoint = ilpEndpoint; }
 
-    @Test
+    @RepeatedTest(10)
     void checkMoveSize(){
         RestrictedArea[] areas = restTemplate.getForObject((ilpEndpoint + "/restricted-areas"), RestrictedArea[].class);
 
@@ -57,7 +58,7 @@ import java.util.List;
         assert(allWithinCorrectDistance);
     }
 
-    @Test
+    @RepeatedTest(10)
     void checkMoveAngle(){
         RestrictedArea[] areas = restTemplate.getForObject((ilpEndpoint + "/restricted-areas"), RestrictedArea[].class);
 
@@ -85,7 +86,7 @@ import java.util.List;
         assert(allCorrectAngle);
     }
 
-    @Test
+    @RepeatedTest(10)
     void checkNoFly(){
         RestrictedArea[] areas = restTemplate.getForObject((ilpEndpoint + "/restricted-areas"), RestrictedArea[].class);
 

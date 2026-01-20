@@ -3,6 +3,7 @@ package ilp.cw2;
 import ilp.cw2.dtos.*;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -23,7 +24,7 @@ public class SystemTests {
     @LocalServerPort
     private int port;
 
-    @Test
+    @RepeatedTest(10)
     void under30SecondsTest(){
         long start = System.currentTimeMillis();
 
@@ -69,16 +70,16 @@ public class SystemTests {
         return dispatches;
     }
 
-    @Test
+    @RepeatedTest(10)
     void viewOutput(){
         String url = "http://localhost:"+port+"/api/v1/calcDeliveryPath";
 
         ArrayList<MedDispatchRec> medDispatchRecs = generateDispatches(2);
         String result = restTemplate.postForEntity(url, medDispatchRecs, String.class).getBody();
 
-        System.out.println(result);
+        //System.out.println(result);
 
-        assertTrue(isValidJson(result));
+        assert(isValidJson(result));
     }
 
     public boolean isValidJson(String json){

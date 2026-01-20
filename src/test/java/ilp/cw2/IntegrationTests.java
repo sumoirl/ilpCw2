@@ -5,6 +5,7 @@ import ilp.cw2.utils.Astar;
 import ilp.cw2.utils.Pair;
 import ilp.cw2.utils.QueryAvailable;
 import ilp.cw2.utils.Raycasting;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,7 +29,7 @@ public class IntegrationTests {
     @Autowired
     IntegrationTests(String ilpEndpoint){ this.ilpEndpoint = ilpEndpoint; }
 
-    @Test
+    @RepeatedTest(10)
     void validDeliveryPath() {
         RestrictedArea[] areas = restTemplate.getForObject((ilpEndpoint + "/restricted-areas"), RestrictedArea[].class);
         Drone[] drones = restTemplate.getForObject((ilpEndpoint + "/drones"), Drone[].class);
@@ -114,7 +115,7 @@ public class IntegrationTests {
 
     }
 
-    @Test
+    @RepeatedTest(10)
     void validDataRetrieval(){
         Drone[] drones = restTemplate.getForObject((ilpEndpoint + "/drones"), Drone[].class);
         DroneForServicePoint[] dronesForServicePoints = restTemplate.getForObject((ilpEndpoint + "/drones-for-service-points"), DroneForServicePoint[].class);
