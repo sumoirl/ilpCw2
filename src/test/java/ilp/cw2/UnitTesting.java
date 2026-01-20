@@ -109,6 +109,7 @@ public class UnitTesting {
                 intersects = Raycasting.intersects(newLine, line);
                 if(intersects) break;
             }
+            if(intersects) break;
         }
         assert(!intersects);
 
