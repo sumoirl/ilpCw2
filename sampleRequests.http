@@ -160,7 +160,7 @@ Content-Type: application/json
     "id": 201,
     "date": "2025-12-01",
     "time": "08:00:00",
-    "delivery": { "lng": -3.1865, "lat": 55.9447 },
+    "delivery": { "lng": 3.1865, "lat": 55.9447 },
     "requirements": {
       "capacity": 5.0,
       "cooling": false,
@@ -174,7 +174,7 @@ Content-Type: application/json
     "time": "19:00:00",
     "delivery": { "lng": -3.1870, "lat": 55.9450 },
     "requirements": {
-      "capacity": 5.0,
+      "capacity": 700.0,
       "cooling": false,
       "heating": false,
       "maxCost": null
