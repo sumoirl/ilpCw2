@@ -40,7 +40,7 @@ public class QueryAvailable {
         }
 
 
-        ArrayList<Pair<DronesAvailibility, Integer>> DroneAvail = new ArrayList();
+        ArrayList<Pair<DronesAvailibility, Integer>> DroneAvail = new ArrayList<>();
 
         for (DroneForServicePoint d : dronesForServicePoints) {
             for (DronesAvailibility drone : d.getDrones()) {
