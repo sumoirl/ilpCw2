@@ -83,7 +83,7 @@ import java.util.List;
             }
         }
 
-        assert(!allCorrectAngle);
+        assert(allCorrectAngle);
     }
 
     @RepeatedTest(10)
