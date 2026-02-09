@@ -32,6 +32,8 @@ public class QueryAvailable {
                 requirementDrones.add(drone);
             }
         }
+        
+        //testing meeting
 
         // Print all the drones!!!
         List<String> ids = new ArrayList<>();
